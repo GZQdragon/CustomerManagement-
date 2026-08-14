@@ -1,0 +1,2 @@
+# CustomerManagement-
+一个简单的基于python与mysql数据库的客户管理系统
