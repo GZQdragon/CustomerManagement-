@@ -7,6 +7,10 @@
   · 免安装数据库：数据保存在本程序同目录的 customers.db 文件里
   · 客户电脑不需要安装 MySQL，双击 exe 就能用
   · 适合单台电脑单人使用
+  · 添加客户支持两种方式：逐项输入 或 一次性输入
+     一次性输入格式：姓名,手机号,邮箱,来源
+     （中英文逗号都可以，例如：张三,13812345678,zhangsan@example.com,朋友推荐）
+  · 没有邮箱的客户，邮箱一栏填"无"即可
 
 【环境要求】
   · Python 3.x（自带 sqlite3 模块，无需安装任何第三方库）
@@ -85,7 +89,10 @@ def is_valid_email(email):
     """
     校验邮箱格式是否合法。
     简单规则：用户名@域名.后缀，如 zhangsan@example.com
+    特殊规则：没有邮箱的客户，输入"无"两个字也视为合法。
     """
+    if email == "无":
+        return True
     pattern = r"^[\w.+-]+@[\w-]+(\.[\w-]+)+$"
     return re.match(pattern, email) is not None
 
@@ -117,12 +124,12 @@ def add_customer():
             break
         print("手机号格式不正确（应为 11 位，如 13812345678），请重新输入")
 
-    # 邮箱校验：不合法就一直提示重新输入
+    # 邮箱校验：不合法就一直提示重新输入（没有邮箱请输"无"）
     while True:
-        email = input("请输入邮箱：").strip()
+        email = input("请输入邮箱（没有邮箱请输入 无）：").strip()
         if is_valid_email(email):
             break
-        print("邮箱格式不正确（如 zhangsan@example.com），请重新输入")
+        print("邮箱格式不正确（如 zhangsan@example.com，没有邮箱请输入 无），请重新输入")
 
     source = input("请输入客户来源（如：广告/朋友推荐/网络/其他）：").strip() or "其他"
 
@@ -140,6 +147,67 @@ def add_customer():
         conn.close()
     except sqlite3.Error as e:
         print(f"添加失败：{e}")
+
+
+def add_customer_once():
+    """功能 1b：一次性输入客户信息，格式：姓名,手机号,邮箱,来源"""
+    print("\n———— 一次性添加客户 ————")
+    print("请按这个格式一次性输入（中英文逗号都可以）：")
+    print("  姓名,手机号,邮箱,来源")
+    print("例如：张三,13812345678,zhangsan@example.com,朋友推荐")
+    print("（没有邮箱请填：无；来源不填默认 其他；输入 0 可放弃）")
+    while True:
+        line = input("请输入：").strip()
+        if line == "0":
+            print("已放弃本次添加。")
+            return
+        # 把中文逗号统一换成英文逗号，再拆分成 4 段
+        parts = [p.strip() for p in line.replace("，", ",").split(",")]
+        if len(parts) != 4:
+            print(f"格式不对：应该是 4 项（姓名,手机号,邮箱,来源），你输入了 {len(parts)} 项，请重新输入")
+            continue
+        name, phone, email, source = parts
+        # 逐项校验，明确提示是哪一项有问题
+        if not name:
+            print("第 1 项：姓名不能为空！")
+            continue
+        if not is_valid_phone(phone):
+            print("第 2 项：手机号格式不正确（应为 11 位，如 13812345678）")
+            continue
+        if not is_valid_email(email):
+            print("第 3 项：邮箱格式不正确（如 zhangsan@example.com，没有邮箱请填 无）")
+            continue
+        source = source or "其他"
+        # 校验全部通过，写入数据库
+        conn = get_connection()
+        if conn is None:
+            return
+        try:
+            cursor = conn.cursor()
+            sql = "INSERT INTO customers (name, phone, email, source) VALUES (?, ?, ?, ?)"
+            cursor.execute(sql, (name, phone, email, source))
+            conn.commit()
+            print(f"客户“{name}”添加成功，ID = {cursor.lastrowid}")
+            cursor.close()
+            conn.close()
+        except sqlite3.Error as e:
+            print(f"添加失败：{e}")
+        return
+
+
+def add_customer_menu():
+    """功能 1：添加客户的子菜单（逐项输入 / 一次性输入）"""
+    print("\n———— 添加客户 ————")
+    print("  a. 逐项输入（按提示一项一项填）")
+    print("  b. 一次性输入（格式：姓名,手机号,邮箱,来源）")
+    print("  0. 返回主菜单")
+    choice = input("请选择输入方式（a/b/0）：").strip().lower()
+    if choice == "a":
+        add_customer()
+    elif choice == "b":
+        add_customer_once()
+    else:
+        print("已返回主菜单。")
 
 
 def view_customers():
@@ -216,7 +284,7 @@ def update_customer():
         elif choice == "3":
             field = "email"
             while True:
-                new_value = input(f"新邮箱（原：{row[3]}）：").strip()
+                new_value = input(f"新邮箱（原：{row[3]}，没有邮箱请输入 无）：").strip()
                 if is_valid_email(new_value):
                     break
                 print("邮箱格式不正确，请重新输入")
@@ -339,7 +407,7 @@ MENU = """
 =========================================
             客户管理系统
 =========================================
-  1. 添加客户
+  1. 添加客户（逐项/一次性）
   2. 查看所有客户
   3. 修改客户
   4. 删除客户
@@ -357,7 +425,7 @@ def main():
         print(MENU)
         choice = input("请选择功能（1-7）：").strip()
         if choice == "1":
-            add_customer()
+            add_customer_menu()
         elif choice == "2":
             view_customers()
         elif choice == "3":
