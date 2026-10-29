@@ -1,0 +1,26 @@
+# 客户数据与导出文件（本地运行时生成，含真实隐私数据，不入库）
+customers.db
+customers.db-journal
+customers.db-wal
+customers.csv
+
+# 打包产物：体积大，建议通过 GitHub Releases 分发
+*.exe
+*.spec
+
+# 位图素材：仓库只保留文字文档与源码
+_shot/
+*.png
+*.jpg
+
+# 测试与运行临时产物
+_测试临时目录/
+错误日志.txt
+__pycache__/
+*.py[cod]
+
+# 编辑器 / 系统缓存
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
