@@ -24,24 +24,38 @@
   然后按菜单提示操作即可。
 
 【使用前必改】
-  把下方 DB_CONFIG 里的 password 改成你自己 MySQL 的密码。
+  先设置环境变量 MYSQL_PASSWORD（密码不写在代码里），例如：
+    Windows：      set MYSQL_PASSWORD=你的密码
+    macOS/Linux：  export MYSQL_PASSWORD=你的密码
 ============================================
 """
 
 import csv          # 用于导出 CSV 文件
+import os           # 用于从环境变量读取 MySQL 密码
 import re           # 用于正则表达式校验格式
 import mysql.connector
 from mysql.connector import Error
 
-# ================== 数据库连接配置（初学者改这里） ==================
+# ================== 数据库连接配置 ==================
+# 密码不写死在代码里，改为从环境变量读取，避免明文密码被提交到仓库。
+#   Windows：      set MYSQL_PASSWORD=你的密码
+#   macOS/Linux：  export MYSQL_PASSWORD=你的密码
 DB_CONFIG = {
-    "host": "localhost",   # MySQL 服务器地址
-    "user": "root",        # MySQL 用户名
-    "password": "123456",     # MySQL root 密码（已重置为 123456）
-    "database": "customer_db",  # 数据库名
+    "host": os.environ.get("MYSQL_HOST", "localhost"),           # MySQL 服务器地址
+    "user": os.environ.get("MYSQL_USER", "root"),                # MySQL 用户名
+    "password": os.environ.get("MYSQL_PASSWORD", ""),            # 密码来自环境变量
+    "database": os.environ.get("MYSQL_DATABASE", "customer_db"),  # 数据库名
 }
 
 # ================== 数据库工具函数 ==================
+
+def hint_missing_password():
+    """密码为空时给出明确提示，避免用户只看到一句「密码不正确」就卡住。"""
+    if not DB_CONFIG["password"]:
+        print("   提示：没有读到数据库密码。请先设置环境变量 MYSQL_PASSWORD：")
+        print("         Windows：      set MYSQL_PASSWORD=你的密码")
+        print("         macOS/Linux：  export MYSQL_PASSWORD=你的密码")
+
 
 def get_connection():
     """建立数据库连接；失败时打印提示并返回 None"""
@@ -51,6 +65,7 @@ def get_connection():
     except Error as e:
         print(f"数据库连接失败：{e}")
         print("   请检查 MySQL 服务是否启动、密码是否正确。")
+        hint_missing_password()
         return None
 
 
@@ -90,6 +105,7 @@ def init_database():
         print("数据库初始化完成（库和表已就绪）")
     except Error as e:
         print(f"初始化数据库失败：{e}")
+        hint_missing_password()
 
 
 # ================== 格式校验函数 ==================
