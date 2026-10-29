@@ -239,7 +239,8 @@ if gui_ok:
     check("表单旁提示姓名必填", "姓名" in app.form_msg_var.get())
     app.clear_form()
 
-    app.var_name.set("邮箱错的客户")n    app.var_phone.set("13711113333")
+    app.var_name.set("邮箱错的客户")
+    app.var_phone.set("13711113333")
     app.var_email.set("abc")
     app.on_save()
     check("邮箱不合法时拒绝保存", app.db.count_all() == before)
