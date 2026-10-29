@@ -59,13 +59,20 @@ python "客户管理系统（图形界面）.py"
 python "客户管理系统（图形界面）.py" --db D:/data/test.db
 ```
 
-MySQL 控制台版需要额外安装依赖，并修改代码顶部 `DB_CONFIG` 里的连接信息：
+MySQL 控制台版需要额外安装依赖，并通过**环境变量**提供数据库密码（密码不写在代码里）：
 
 ```bash
 pip install mysql-connector-python
+
+# 先在当前终端设置密码（关掉终端就失效）
+set MYSQL_PASSWORD=你的密码             # Windows CMD
+$env:MYSQL_PASSWORD="你的密码"          # Windows PowerShell
+export MYSQL_PASSWORD=你的密码          # macOS / Linux
+
 python "Customer Management.py"
 ```
 
+连接信息可用环境变量覆盖，默认值为 `MYSQL_HOST=localhost`、`MYSQL_USER=root`、`MYSQL_DATABASE=customer_db`。
 首次运行会自动创建数据库 `customer_db` 与表 `customers`（`utf8mb4`）。
 
 ## 运行自检
@@ -92,6 +99,5 @@ python test_customer_gui.py
 
 ## 注意
 
-- `src/Customer Management.py` 里的 `DB_CONFIG` 含占位用的本地 MySQL 密码，**运行前请改成你自己的密码**，
-  且不要把自己的真实密码提交到仓库。
+- `src/Customer Management.py` 的数据库密码从环境变量 `MYSQL_PASSWORD` 读取，**不要把密码写回代码**或提交到仓库。
 - 可执行文件建议后续通过 GitHub Releases 分发，而不是提交到仓库。
